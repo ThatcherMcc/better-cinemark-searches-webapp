@@ -1,9 +1,9 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { Seat, SeatBlock, Showtime } from "../types";
+import { Seat, Showtime } from "../types";
 
 const BASE_URL = "https://www.cinemark.com";
-const REQUEST_DELAY = 5000; // 5 seconds
+const REQUEST_DELAY = 5000;
 
 async function fetchHTML(url: string) {
     const response = await axios.get(url);
@@ -14,7 +14,7 @@ export async function scrapeMovieNames(theaterUrl: string): Promise<string[]> {
     const $ = await fetchHTML(theaterUrl);
     const movieElements = $('div[class^="showtimeMovieBlock"] h3');
     
-    return movieElements.map((_: number, movieName: string) => $(movieName).text().trim()).get();
+    return movieElements.map((_, movieName) => $(movieName).text().trim()).get();
 }
 
 export async function scrapeShowtimes(theaterUrl: string, movieName: string): Promise<Showtime[]> {
@@ -27,12 +27,12 @@ export async function scrapeShowtimes(theaterUrl: string, movieName: string): Pr
   
       if (movieTitle === movieName) {
         const showtimeLinks = block.find('.showtimeMovieTimes .showtime a.showtime-link');
-        return showtimeLinks.map((_: number, link: string) => {
+        return showtimeLinks.map((_, link) => {
             const $link = $(link);
             return {
                 'time': $link.text().trim(),
-                'format': $link.attr('data-print-type-name').trim(),
-                'url': BASE_URL + $link.attr('href').trim() || 'Unknown'
+                'format': $link.attr('data-print-type-name')?.trim() || 'Unknown',
+                'url': BASE_URL + $link.attr('href')?.trim() || 'Unknown'
             };
         }).get();
       }
@@ -47,7 +47,7 @@ async function scrapeSeatsForShowtime(showtime: Showtime): Promise<Seat[]> {
         const availableSeatsElements = $('button.seatAvailable');
         const seats: Seat[] = [];
     
-        availableSeatsElements.each((_: number, seat: string) => {
+        availableSeatsElements.each((_, seat) => {
           const seatDesignation = $(seat).find('span.seatDesignation').text();
           if (seatDesignation) {
             const row = seatDesignation[0];
