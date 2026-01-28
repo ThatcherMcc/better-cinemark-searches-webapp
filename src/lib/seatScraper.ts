@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { Seat, Showtime } from "../types";
+import { MovieInfo, Seat, Showtime } from "../types";
 
 const BASE_URL = "https://www.cinemark.com";
 const REQUEST_DELAY = 5000;
@@ -10,11 +10,46 @@ async function fetchHTML(url: string) {
     return cheerio.load(response.data);
 }
 
-export async function scrapeMovieNames(theaterUrl: string): Promise<string[]> {
-    const $ = await fetchHTML(theaterUrl);
-    const movieElements = $('div[class^="showtimeMovieBlock"] h3');
-    
-    return movieElements.map((_, movieName) => $(movieName).text().trim()).get();
+export async function scrapeMovieNames(theaterUrl: string): Promise<MovieInfo[]> {
+  const $ = await fetchHTML(theaterUrl);
+  const movieBlocks = $('div[class^="showtimeMovieBlock"]');
+  
+  return movieBlocks.map((_, block) => {
+      const $block = $(block);
+      const name = $block.find('h3').text().trim();
+      
+      const rating = $block.find('.showtimeMovieRating').text().trim() || null;
+      const runtime = $block.find('.showtimeMovieRuntime').text().trim() || null;
+      
+      let imageUrl: string | null = null;
+      
+      const trailerButton = $block.find('a.showtimeMovieTrailerLink');
+      if (trailerButton.length) {
+          const jsonData = trailerButton.attr('data-json-model');
+          if (jsonData) {
+              try {
+                  const movieData = JSON.parse(jsonData.replace(/&quot;/g, '"'));
+                  imageUrl = movieData.posterMediumImageUrl || movieData.posterLargeImageUrl || movieData.posterSmallImageUrl || null;
+              } catch (e) {
+                  console.error('Failed to parse JSON data:', e);
+              }
+          }
+      }
+      
+      if (!imageUrl) {
+          const sourceTag = $block.find('picture source');
+          if (sourceTag.length) {
+              imageUrl = sourceTag.attr('srcset') || null;
+          }
+      }
+      
+      if (!imageUrl) {
+          const imgTag = $block.find('img');
+          imageUrl = imgTag.attr('srcset') || imgTag.attr('data-srcset') || imgTag.attr('src') || null;
+      }
+      
+      return { name, imageUrl, rating, runtime };
+  }).get();
 }
 
 export async function scrapeShowtimes(theaterUrl: string, movieName: string): Promise<Showtime[]> {

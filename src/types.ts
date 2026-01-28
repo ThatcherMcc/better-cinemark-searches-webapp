@@ -15,4 +15,10 @@ export type Showtime = {
     format: string;
     url: string | 'Unknown';
 }
-  
+
+export interface MovieInfo {
+    name: string;
+    imageUrl: string | null;
+    rating: string | null;
+    runtime: string | null;
+}

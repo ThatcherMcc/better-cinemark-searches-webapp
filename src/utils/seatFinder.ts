@@ -29,7 +29,7 @@ export default function SeatFinder(availableSeats: Seat[], groupSize: number) : 
       const startColumn = columns[i];
       let isContiguous = true;
 
-      for (let j = 1; j < groupSize - 1; j++) {
+      for (let j = 1; j < groupSize; j++) {
         if (columns[i + j] !== startColumn + j) {
           isContiguous = false;
           break;
