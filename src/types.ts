@@ -22,3 +22,19 @@ export interface MovieInfo {
     rating: string | null;
     runtime: string | null;
 }
+
+export type HeatmapPreference = 
+  | 'middles'
+  | 'crosshair'
+  | 'back-triangle'
+  | 'back'
+  | 'front'
+  | 'back-back';
+
+
+export interface HeatmapOption {
+    id: HeatmapPreference;
+    name: string;
+    description: string;
+    image_name: string;
+}

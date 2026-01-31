@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { SeatBlock, MovieInfo } from '../types';
+import type { SeatBlock, MovieInfo, HeatmapPreference } from '../types';
+import TheaterHeatmaps from '../components/TheaterHeatmaps';
 
 export default function HomePage() {
   const [movies, setMovies] = useState<MovieInfo[]>([]);
@@ -11,6 +12,7 @@ export default function HomePage() {
   const [seatBlocks, setSeatBlocks] = useState<SeatBlock[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [heatmapPreference, setHeatmapPreference] = useState<HeatmapPreference>('middles');
 
   const theaterUrl = "https://www.cinemark.com/theatres/tx-allen/cinemark-allen-16-and-xd";
 
@@ -141,6 +143,16 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Seating Preference Heatmaps */}
+        {!selectedMovie && (
+          <div className="mb-10">
+            <TheaterHeatmaps 
+              selectedPreference={heatmapPreference}
+              onPreferenceChange={setHeatmapPreference}
+            />
           </div>
         )}
 
