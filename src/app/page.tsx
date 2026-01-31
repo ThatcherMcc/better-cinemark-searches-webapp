@@ -311,9 +311,9 @@ export default function HomePage() {
                     </div>
 
                     {/* Select Button */}
-                    <button className="px-6 py-3 bg-white text-neutral-900 rounded-lg font-semibold hover:bg-neutral-100 hover:shadow-lg transition-all duration-200 whitespace-nowrap">
+                    <a href={block.url} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-white text-neutral-900 rounded-lg font-semibold hover:bg-neutral-100 hover:shadow-lg transition-all duration-200 whitespace-nowrap">
                       Select Seats →
-                    </button>
+                    </a>
                   </div>
                 </div>
               ))}

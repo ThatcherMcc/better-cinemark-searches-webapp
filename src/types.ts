@@ -1,19 +1,21 @@
 export interface Seat {
     row: string;
     column: number;
-    time:string;
+    time: string;
+    url: string;
   }
   
 export interface SeatBlock {
     showtime: string;
     row: string;
     seats: Seat[];
+    url: string;
 }
 
 export type Showtime = {
     time: string;
     format: string;
-    url: string | 'Unknown';
+    url: string;
 }
 
 export interface MovieInfo {

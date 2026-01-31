@@ -54,6 +54,7 @@ export async function scrapeMovieNames(theaterUrl: string): Promise<MovieInfo[]>
 
 export async function scrapeShowtimes(theaterUrl: string, movieName: string): Promise<Showtime[]> {
     const $ = await fetchHTML(theaterUrl);
+    console.log(theaterUrl);
     const movieBlocks = $('div[class^="showtimeMovieBlock"]');
 
     for (let i = 0; i < movieBlocks.length; i++) {
@@ -66,8 +67,8 @@ export async function scrapeShowtimes(theaterUrl: string, movieName: string): Pr
             const $link = $(link);
             return {
                 'time': $link.text().trim(),
-                'format': $link.attr('data-print-type-name')?.trim() || 'Unknown',
-                'url': BASE_URL + $link.attr('href')?.trim() || 'Unknown'
+                'format': $link.attr('data-print-type-name')?.trim() || 'Unknown Format',
+                'url': BASE_URL + $link.attr('href')
             };
         }).get();
       }
@@ -88,7 +89,7 @@ async function scrapeSeatsForShowtime(showtime: Showtime): Promise<Seat[]> {
             const row = seatDesignation[0];
             const column = parseInt(seatDesignation.substring(1), 10);
             
-            seats.push({ row, column, time: showtime.time });
+            seats.push({ row, column, time: showtime.time, url: showtime.url });
           }
         });
     

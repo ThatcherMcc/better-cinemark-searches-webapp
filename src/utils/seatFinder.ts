@@ -3,15 +3,15 @@ import { Seat, SeatBlock } from "../types";
 export default function SeatFinder(availableSeats: Seat[], groupSize: number) : SeatBlock[] {
   const blocks: SeatBlock[] = [];
 
-  const groups: Record<string, number[]> = {};
+  const groups: Record<string, { columns: number[], url: string }> = {};
 
   // Group seats by time and row
   availableSeats.forEach(seat => {
     const key = `${seat.time}-${seat.row}`;
     if (!groups[key]) {
-      groups[key] = [];
+      groups[key] = { columns: [], url: seat.url };
     }
-    groups[key].push(seat.column);
+    groups[key].columns.push(seat.column);
   });
 
   // "groups" now is a record of time-row pairs as the key, and the value is an array of columns that are available for that time and row.
@@ -19,7 +19,8 @@ export default function SeatFinder(availableSeats: Seat[], groupSize: number) : 
 
   for (const key in groups) {
     const [time, row] = key.split('-');
-    const columns = groups[key].sort((a, b) => a - b);
+    const columns = groups[key].columns.sort((a, b) => a - b);
+    const url = groups[key].url;
     
     if (columns.length < groupSize) {
       continue;
@@ -35,11 +36,13 @@ export default function SeatFinder(availableSeats: Seat[], groupSize: number) : 
           break;
         }
       }
+      
       if (isContiguous) {
         blocks.push({
           showtime: time,
           row: row,
-          seats: columns.slice(i, i + groupSize).map(column => ({ column, row, time }))
+          seats: columns.slice(i, i + groupSize).map(column => ({ column, row, time, url })),
+          url: url
         });
       }
     }
