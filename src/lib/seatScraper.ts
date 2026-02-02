@@ -6,37 +6,124 @@ import { MovieInfo, Seat, Showtime } from "../types";
 const BASE_URL = "https://www.cinemark.com";
 const REQUEST_DELAY = 5000;
 
-async function fetchHTML(url: string) {
-    console.log('🌐 Fetching URL:', url);
-    try {
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Cache-Control': 'max-age=0',
-                'Referer': 'https://www.cinemark.com/'
-            },
-        });
-        console.log('✅ Fetch successful, status:', response.status);
-        console.log('📊 Response size:', response.data.length, 'bytes');
-        return cheerio.load(response.data);
-    } catch (error) {
-        console.error('❌ Fetch failed:', error);
-        if (axios.isAxiosError(error)) {
-            console.error('Response status:', error.response?.status);
-            console.error('Response data:', error.response?.data?.substring(0, 500));
-        }
-        throw error;
+// Load proxies from environment variable
+const PROXIES = process.env.PROXY_LIST?.split(',').map(p => p.trim()) || [];
+let currentProxyIndex = 0;
+
+function getNextProxy() {
+    if (PROXIES.length === 0) {
+        console.warn('⚠️ No proxies configured, using direct connection');
+        return null;
     }
+    
+    const proxy = PROXIES[currentProxyIndex];
+    currentProxyIndex = (currentProxyIndex + 1) % PROXIES.length;
+    console.log(`🔄 Using proxy ${currentProxyIndex}/${PROXIES.length}: ${proxy.substring(0, 20)}...`);
+    return proxy;
 }
 
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+];
+
+function getRandomUserAgent() {
+    return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+async function fetchHTML(url: string, retries = 3) {
+    console.log('🌐 Fetching URL:', url);
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+        const proxyUrl = getNextProxy();
+        
+        try {
+            // Parse proxy URL (format: http://username:password@host:port or http://host:port)
+            let axiosConfig: any = {
+                headers: {
+                    'User-Agent': getRandomUserAgent(),
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'same-origin',
+                    'Sec-Fetch-User': '?1',
+                    'Cache-Control': 'max-age=0',
+                    'Referer': 'https://www.cinemark.com/',
+                    'DNT': '1',
+                },
+                timeout: 30000,
+                maxRedirects: 5,
+            };
+
+            if (proxyUrl) {
+                // Parse the proxy URL
+                const proxyUrlObj = new URL(proxyUrl);
+                
+                axiosConfig.proxy = {
+                    protocol: proxyUrlObj.protocol.replace(':', ''),
+                    host: proxyUrlObj.hostname,
+                    port: parseInt(proxyUrlObj.port),
+                };
+
+                // Add auth if present
+                if (proxyUrlObj.username && proxyUrlObj.password) {
+                    axiosConfig.proxy.auth = {
+                        username: proxyUrlObj.username,
+                        password: proxyUrlObj.password,
+                    };
+                }
+            }
+
+            const response = await axios.get(url, axiosConfig);
+            
+            if (response.status === 403) {
+                console.warn(`🚫 403 Forbidden on attempt ${attempt + 1}/${retries}`);
+                if (attempt < retries - 1) {
+                    const backoffDelay = (attempt + 1) * 2000;
+                    console.log(`⏳ Waiting ${backoffDelay}ms before retry...`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    continue;
+                }
+                throw new Error('Request blocked by server (403)');
+            }
+            
+            console.log('✅ Fetch successful, status:', response.status);
+            console.log('📊 Response size:', response.data.length, 'bytes');
+            return cheerio.load(response.data);
+            
+        } catch (error) {
+            console.error(`❌ Fetch failed (attempt ${attempt + 1}/${retries}):`, error);
+            
+            if (axios.isAxiosError(error)) {
+                console.error('Response status:', error.response?.status);
+                console.error('Response headers:', error.response?.headers);
+                
+                // If it's a 403, try with next proxy
+                if (error.response?.status === 403 && attempt < retries - 1) {
+                    console.log('🔄 Trying with next proxy...');
+                    continue;
+                }
+            }
+            
+            // If last attempt, throw
+            if (attempt === retries - 1) {
+                throw error;
+            }
+            
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+    
+    throw new Error('Failed after all retries');
+}
 export async function scrapeMovieNames(theaterUrl: string): Promise<MovieInfo[]> {
   console.log('🎬 scrapeMovieNames - Starting...');
   const $ = await fetchHTML(theaterUrl);
