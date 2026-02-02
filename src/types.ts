@@ -2,18 +2,22 @@ export interface Seat {
     row: string;
     column: number;
     time:string;
+    isAvailable: boolean;
+    url: string;
   }
   
 export interface SeatBlock {
     showtime: string;
     row: string;
+    distanceFromCenter: number;
     seats: Seat[];
+    url: string;
 }
 
 export type Showtime = {
     time: string;
     format: string;
-    url: string | 'Unknown';
+    url: string;
 }
 
 export interface MovieInfo {

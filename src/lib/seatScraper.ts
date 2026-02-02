@@ -79,16 +79,17 @@ export async function scrapeShowtimes(theaterUrl: string, movieName: string): Pr
 async function scrapeSeatsForShowtime(showtime: Showtime): Promise<Seat[]> {
     try {
         const $ = await fetchHTML(showtime.url);
-        const availableSeatsElements = $('button.seatAvailable');
+        const seatsElements = $('button.seatBlock');
         const seats: Seat[] = [];
     
-        availableSeatsElements.each((_, seat) => {
+        seatsElements.each((_, seat) => {
           const seatDesignation = $(seat).find('span.seatDesignation').text();
           if (seatDesignation) {
             const row = seatDesignation[0];
             const column = parseInt(seatDesignation.substring(1), 10);
-            
-            seats.push({ row, column, time: showtime.time });
+            const isAvailable = $(seat).hasClass('seatAvailable');
+
+            seats.push({ row, column, time: showtime.time, isAvailable: isAvailable, url: showtime.url });
           }
         });
     
