@@ -9,7 +9,7 @@ const preferences: HeatmapOption[] = [
   {
     id: 'middles',
     name: 'Middle',
-    description: "You'll enjoy the middle seats of any back Rowdies.",
+    description: "You'll enjoy the middle seats of any back rows.",
     image_name: "middles.png",
   },
   {
@@ -21,7 +21,7 @@ const preferences: HeatmapOption[] = [
   {
     id: 'back-triangle',
     name: 'Back Triangle',
-    description: 'You gravitate towards the middle back buy you can enjoy most of the back rows.',
+    description: 'You gravitate towards the middle back but you can enjoy most of the back rows.',
     image_name: "back-triangle.png",
   },
   {
@@ -53,33 +53,32 @@ export default function TheaterHeatmaps({ selectedPreference, onPreferenceChange
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
-      {/* Collapsed View - Small Header */}
+    <div className="w-full max-w-6xl mx-auto">
+      {/* Collapsed View */}
       {!isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-full bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-5 hover:bg-neutral-800/70 hover:border-neutral-600/50 transition-all duration-300 group"
+          className="w-full border-2 border-zinc-800 bg-zinc-950/90 hover:border-zinc-700 hover:bg-zinc-900/80 transition-all p-6 group"
         >
           <div className="flex items-center justify-between">
             <div className="text-left">
-              <h3 className="text-lg font-semibold text-white mb-1">
-                Seating Preference: <span className="text-neutral-400">{preferences.find(p => p.id === selectedPreference)?.name}</span>
-              </h3>
-              <p className="text-sm text-neutral-400">
-                Click to change preference
-              </p>
+              <div className="text-sm font-mono text-zinc-500 mb-2 uppercase tracking-widest">
+                Seating Preference
+              </div>
+              <div className="text-xl font-light text-white">
+                {preferences.find(p => p.id === selectedPreference)?.name}
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Small preview image */}
-              <div className="w-16 h-16 rounded-lg bg-neutral-700 overflow-hidden relative">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 border-2 border-zinc-800 bg-zinc-900 overflow-hidden relative">
                 <Image 
                   src={`/theater_heatmaps/${preferences.find(p => p.id === selectedPreference)?.image_name}`} 
                   alt={preferences.find(p => p.id === selectedPreference)?.name || ''} 
                   fill
-                  className="object-contain p-1"
+                  className="object-cover"
                 />
               </div>
-              <svg className="w-6 h-6 text-neutral-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
@@ -87,29 +86,29 @@ export default function TheaterHeatmaps({ selectedPreference, onPreferenceChange
         </button>
       )}
 
-      {/* Expanded View - Full Selection Interface */}
+      {/* Expanded View */}
       {isExpanded && (
-        <div className="space-y-6">
-          {/* Header with Close Button */}
-          <div className="flex items-center justify-between">
-            <div className="text-center flex-1">
-              <h2 className="text-3xl font-bold text-white mb-2">
+        <div className="space-y-8 border-2 border-zinc-800 bg-zinc-950/60 p-8">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-3xl font-light text-white mb-2">
                 Seating Preferences
               </h2>
-              <p className="text-neutral-400">
-                Choose your preferred seating style
+              <p className="text-base text-zinc-500 font-mono uppercase tracking-wider">
+                Select Your Preferred Style
               </p>
             </div>
             <button
               onClick={() => setIsExpanded(false)}
-              className="px-4 py-2 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded-lg hover:bg-neutral-700 transition-all duration-200"
+              className="px-6 py-3 bg-zinc-800 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 transition-all text-base font-mono"
             >
-              Done
+              DONE
             </button>
           </div>
 
-          {/* Preference Grid - Larger */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Preference Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {preferences.map((preference) => (
               <button
                 key={preference.id}
@@ -118,45 +117,45 @@ export default function TheaterHeatmaps({ selectedPreference, onPreferenceChange
                   setIsExpanded(false);
                 }}
                 className={`
-                  relative group p-6 rounded-xl border-2 transition-all duration-300
+                  relative p-6 border-2 transition-all text-left
                   ${selectedPreference === preference.id
-                    ? 'bg-white border-white shadow-xl shadow-white/20'
-                    : 'bg-neutral-800/50 border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800/70'
+                    ? 'bg-white border-white shadow-lg shadow-white/20'
+                    : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
                   }
                 `}
               >
-                {/* Image Preview - Much Larger */}
+                {/* Image */}
                 <div className={`
-                  w-full aspect-[4/3] rounded-lg mb-4 overflow-hidden transition-colors duration-300 relative
+                  w-full aspect-[1.7/1] mb-5 overflow-hidden relative border-2
                   ${selectedPreference === preference.id
-                    ? 'bg-neutral-100'
-                    : 'bg-neutral-700 group-hover:bg-neutral-600'
+                    ? 'bg-zinc-100 border-zinc-300'
+                    : 'bg-zinc-900 border-zinc-800'
                   }
                 `}>
                   <Image 
                     src={`/theater_heatmaps/${preference.image_name}`} 
                     alt={preference.name} 
                     fill
-                    className="object-contain p-4"
+                    className="object-cover"
                   />
                 </div>
 
-                {/* Text Content */}
-                <div className="text-left space-y-1">
+                {/* Text */}
+                <div className="space-y-2">
                   <h3 className={`
-                    font-semibold text-xl transition-colors duration-300
+                    font-light text-xl
                     ${selectedPreference === preference.id
-                      ? 'text-neutral-900'
+                      ? 'text-black'
                       : 'text-white'
                     }
                   `}>
                     {preference.name}
                   </h3>
                   <p className={`
-                    text-base transition-colors duration-300
+                    text-sm leading-relaxed
                     ${selectedPreference === preference.id
-                      ? 'text-neutral-600'
-                      : 'text-neutral-400'
+                      ? 'text-zinc-700'
+                      : 'text-zinc-500'
                     }
                   `}>
                     {preference.description}
@@ -165,8 +164,8 @@ export default function TheaterHeatmaps({ selectedPreference, onPreferenceChange
 
                 {/* Selected Indicator */}
                 {selectedPreference === preference.id && (
-                  <div className="absolute top-3 right-3">
-                    <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center">
+                  <div className="absolute top-4 right-4">
+                    <div className="w-8 h-8 border-2 border-black flex items-center justify-center bg-black">
                       <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -181,15 +180,3 @@ export default function TheaterHeatmaps({ selectedPreference, onPreferenceChange
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

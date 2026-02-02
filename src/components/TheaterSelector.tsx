@@ -122,110 +122,109 @@ export default function TheaterSelector({ onTheaterSelect }: TheaterSelectorProp
   const allTheaters = [...cityTheaters, ...nearbyTheaters];
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-8 shadow-2xl">
+    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      {/* Minimal grid background */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+
+      <div className="relative w-full max-w-2xl">
+        <div className="border-2 border-zinc-700 bg-zinc-950 p-10">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-neutral-700/50 rounded-full mb-4">
-              <MapPin className="text-white" size={32} />
+          <div className="mb-10">
+            <div className="w-12 h-12 border-2 border-zinc-700 flex items-center justify-center mb-6">
+              <MapPin className="text-zinc-500" size={24} />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Find Your Theater
+            <h1 className="text-4xl font-light text-white mb-3 tracking-tight">
+              Seat Finder <span className="text-zinc-600">for Cinemark</span>
             </h1>
-            <p className="text-neutral-400">
-              Search by city or use your current location
+            <p className="text-base text-zinc-500 font-mono uppercase tracking-wider">
+              Select Your Theater
             </p>
           </div>
 
           {/* Search Form */}
-          <form onSubmit={handleSearchSubmit} className="mb-6">
+          <form onSubmit={handleSearchSubmit} className="mb-5">
             <div className="flex gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Enter city name..."
-                  className="w-full px-4 py-3 bg-neutral-700/50 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                  disabled={loading}
-                />
-              </div>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Enter a city name that has a Cinemark theater"
+                className="flex-1 px-5 py-4 bg-zinc-900 border-2 border-zinc-800 text-white text-base placeholder-zinc-600 focus:border-zinc-600 focus:outline-none transition-colors"
+                disabled={loading}
+              />
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-white text-neutral-900 rounded-lg hover:bg-neutral-100 disabled:bg-neutral-600 disabled:cursor-not-allowed flex items-center gap-2 font-semibold transition-all"
+                className="px-8 py-4 bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed transition-colors text-base font-mono font-bold flex items-center gap-3"
               >
                 {loading && !useCurrentLocation ? (
                   <>
                     <Loader2 className="animate-spin" size={20} />
-                    <span className="hidden sm:inline">Searching...</span>
+                    <span className="hidden sm:inline">SEARCH</span>
                   </>
                 ) : (
                   <>
                     <Search size={20} />
-                    <span className="hidden sm:inline">Search</span>
+                    <span className="hidden sm:inline">SEARCH</span>
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          {/* Use Current Location Button */}
-          <div className="mb-6">
+          {/* Location Button */}
+          <div className="mb-10">
             <button
               onClick={handleUseCurrentLocation}
               disabled={loading}
-              className="w-full px-4 py-3 bg-neutral-700/50 border border-neutral-600 text-white rounded-lg hover:bg-neutral-700 disabled:bg-neutral-800 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-all"
+              className="w-full px-5 py-4 bg-zinc-800 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-base font-mono flex items-center justify-center gap-3"
             >
               {useCurrentLocation ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Getting location...
+                  LOCATING
                 </>
               ) : (
                 <>
                   <Navigation size={20} />
-                  Use my current location
+                  USE CURRENT LOCATION
                 </>
               )}
             </button>
           </div>
 
-          {/* Error Message */}
+          {/* Error */}
           {error && (
-            <div className="mb-6 p-4 bg-red-900/20 border border-red-800/30 rounded-lg">
-              <p className="text-red-300 text-sm text-center">{error}</p>
+            <div className="mb-8 border-2 border-red-800 bg-red-950/40 p-4">
+              <p className="text-red-300 text-sm font-mono text-center">{error}</p>
             </div>
           )}
 
-          {/* Theater Results - City Matches */}
+          {/* City Results */}
           {cityTheaters.length > 0 && (
-            <div className="space-y-3 mb-6">
-              <h2 className="text-lg font-semibold text-neutral-200">
-                Theaters in {searchInput}
+            <div className="space-y-3 mb-8">
+              <h2 className="text-sm font-mono text-zinc-500 uppercase tracking-widest mb-4">
+                {searchInput}
               </h2>
               {cityTheaters.map((theater) => (
                 <button
                   key={theater.id}
                   onClick={() => handleTheaterSelect(theater)}
-                  className="w-full text-left p-5 bg-neutral-700/30 border border-neutral-600/50 rounded-xl hover:bg-neutral-700/50 hover:border-neutral-500 transition-all group"
+                  className="w-full text-left p-5 bg-zinc-900 border-2 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800 transition-all group"
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white text-lg mb-1 group-hover:text-neutral-100 transition-colors">
+                    <div className="flex-1">
+                      <h3 className="font-light text-white text-lg mb-2 group-hover:text-zinc-200 transition-colors">
                         {theater.name}
                       </h3>
-                      <p className="text-neutral-400 text-sm">
+                      <p className="text-zinc-500 text-sm font-mono">
                         {theater.city}
                       </p>
                     </div>
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
+                    <div className="text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
                 </button>
@@ -233,38 +232,41 @@ export default function TheaterSelector({ onTheaterSelect }: TheaterSelectorProp
             </div>
           )}
 
-          {/* Theater Results - Nearby */}
+          {/* Nearby Results */}
           {nearbyTheaters.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-neutral-200">
-                {cityTheaters.length > 0 ? 'Nearby Theaters' : 'Nearest Theaters'}
+              <h2 className="text-sm font-mono text-zinc-500 uppercase tracking-widest mb-4">
+                {cityTheaters.length > 0 ? 'NEARBY' : 'NEAREST'}
               </h2>
               {nearbyTheaters.map((theater) => (
                 <button
                   key={theater.id}
                   onClick={() => handleTheaterSelect(theater)}
-                  className="w-full text-left p-5 bg-neutral-700/30 border border-neutral-600/50 rounded-xl hover:bg-neutral-700/50 hover:border-neutral-500 transition-all group"
+                  className="w-full text-left p-5 bg-zinc-900 border-2 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800 transition-all group"
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white text-lg mb-1 group-hover:text-neutral-100 transition-colors">
+                    <div className="flex-1">
+                      <h3 className="font-light text-white text-lg mb-2 group-hover:text-zinc-200 transition-colors">
                         {theater.name}
                       </h3>
-                      <p className="text-neutral-400 text-sm">
-                        {theater.city}
-                      </p>
-                      {theater.distance !== undefined && (
-                        <p className="text-neutral-500 text-xs mt-2">
-                          {theater.distance.toFixed(1)} miles away
+                      <div className="flex items-center gap-3 text-sm font-mono">
+                        <p className="text-zinc-500">
+                          {theater.city}
                         </p>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        {theater.distance !== undefined && (
+                          <>
+                            <span className="text-zinc-700">·</span>
+                            <p className="text-zinc-600">
+                              {theater.distance.toFixed(1)} mi
+                            </p>
+                          </>
+                        )}
                       </div>
+                    </div>
+                    <div className="text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
                 </button>
@@ -274,12 +276,12 @@ export default function TheaterSelector({ onTheaterSelect }: TheaterSelectorProp
 
           {/* Empty State */}
           {!loading && allTheaters.length === 0 && !error && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-neutral-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="text-neutral-500" size={32} />
+            <div className="text-center py-16">
+              <div className="w-16 h-16 border-2 border-zinc-800 flex items-center justify-center mx-auto mb-6">
+                <MapPin className="text-zinc-700" size={32} />
               </div>
-              <p className="text-neutral-400 text-sm">
-                Enter your city to find nearby theaters
+              <p className="text-zinc-600 text-sm font-mono uppercase tracking-wider">
+                Search to begin
               </p>
             </div>
           )}

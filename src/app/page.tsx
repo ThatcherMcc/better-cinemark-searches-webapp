@@ -163,71 +163,91 @@ export default function HomePage() {
     }
   };
 
+  // Get quality styling for seat ranking
+  const getQualityStyle = (index: number) => {
+    if (index === 0) {
+      return {
+        containerClass: 'border-yellow-600/50 hover:border-yellow-500/70 shadow-lg shadow-yellow-600/10',
+        seatClass: 'bg-yellow-600/10 border-yellow-600/40 text-yellow-200',
+        buttonClass: 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg shadow-yellow-500/30'
+      };
+    } else if (index === 1) {
+      return {
+        containerClass: 'border-zinc-600/50 hover:border-zinc-500/70',
+        seatClass: 'bg-zinc-700/20 border-zinc-600/40 text-zinc-300',
+        buttonClass: 'bg-white hover:bg-zinc-200 text-black'
+      };
+    }
+    return {
+      containerClass: 'border-zinc-700/50 hover:border-zinc-600/70',
+      seatClass: 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400',
+      buttonClass: 'bg-white hover:bg-zinc-200 text-black'
+    };
+  };
+
   // If no theater selected, show theater selector
   if (!selectedTheater) {
     return <TheaterSelector onTheaterSelect={handleTheaterSelect} />;
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMSI+PHBhdGggZD0iTTM2IDE0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnpNNiA1NGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')]"></div>
-      </div>
+    <div className="min-h-screen bg-black">
+      {/* Minimal grid background */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
-      <div className="relative z-10 container mx-auto px-4 py-12 max-w-7xl">
-        {/* Header with Theater Info */}
-        <div className="text-center mb-12 space-y-3">
-          <div className="flex items-center justify-center gap-3 mb-4">
+      <div className="relative z-10 container mx-auto px-6 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-5xl font-light text-white tracking-tight mb-2">
+                Seat Finder <span className="text-zinc-600">for Cinemark</span>
+              </h1>
+              <p className="text-base text-zinc-500 font-mono">
+                {selectedTheater.name}
+              </p>
+            </div>
             <button
               onClick={handleBackToTheaterSelection}
-              className="px-4 py-2 bg-neutral-800 border border-neutral-700 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-all text-sm font-medium"
+              className="px-6 py-3 bg-zinc-800 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 transition-all text-base font-mono"
             >
-              ← Change Theater
+              ← CHANGE THEATER
             </button>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white">
-            Seat Finder for Cinemark
-          </h1>
-          <p className="text-lg text-neutral-400 font-light">
-            {selectedTheater.name}
-          </p>
-          <div className="h-px w-24 mx-auto bg-gradient-to-r from-transparent via-neutral-600 to-transparent"></div>
+          <div className="h-px bg-gradient-to-r from-zinc-800 via-zinc-600 to-zinc-800" />
         </div>
 
         {/* Group Size Selector */}
         {!selectedMovie && (
-          <div className="mb-10 max-w-md mx-auto">
-            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-5 shadow-lg">
-              <label className="block text-sm font-medium mb-3 text-neutral-300 uppercase tracking-wider">
-                Group Size
-              </label>
-              <div className="grid grid-cols-8 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(size => (
-                  <button
-                    key={size}
-                    onClick={() => handleGroupSizeChange(size)}
-                    disabled={loading}
-                    className={`
-                      aspect-square rounded-lg font-semibold text-base transition-all duration-200
-                      ${groupSize === size 
-                        ? 'bg-white text-neutral-900 shadow-md' 
-                        : 'bg-neutral-700/50 text-neutral-300 hover:bg-neutral-600/50'
-                      }
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
+          <div className="mb-10 max-w-lg">
+            <label className="block text-sm font-mono text-zinc-400 mb-4 uppercase tracking-widest">
+              Group Size
+            </label>
+            <div className="flex gap-3">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(size => (
+                <button
+                  key={size}
+                  onClick={() => handleGroupSizeChange(size)}
+                  disabled={loading}
+                  className={`
+                    flex-1 aspect-square flex items-center justify-center text-lg font-mono transition-all border-2
+                    ${groupSize === size 
+                      ? 'bg-white text-black border-white shadow-lg shadow-white/20' 
+                      : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border-zinc-700 hover:border-zinc-600'
+                    }
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                  `}
+                >
+                  {size}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Seating Preference Heatmaps */}
+        {/* Seating Preference */}
         {!selectedMovie && (
-          <div className="mb-10">
+          <div className="mb-12">
             <TheaterHeatmaps 
               selectedPreference={heatmapPreference}
               onPreferenceChange={setHeatmapPreference}
@@ -235,27 +255,26 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Loading State with Progress Bar */}
+        {/* Loading State */}
         {loading && (
-          <div className="text-center py-16">
-            <div className="inline-block max-w-md w-full">
-              <div className="w-12 h-12 border-3 border-neutral-700 border-t-white rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-lg text-neutral-400">
+          <div className="py-20">
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
+              <p className="text-center text-base font-mono text-zinc-400">
                 {loadingProgress 
-                  ? `Scanning showtimes (${loadingProgress.current}/${loadingProgress.total})...` 
-                  : 'Loading...'}
+                  ? `SCANNING ${loadingProgress.current}/${loadingProgress.total}` 
+                  : 'LOADING'}
               </p>
               {loadingProgress && loadingProgress.total > 0 && (
-                <div className="mt-6 w-full">
-                  <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-white h-full transition-all duration-500 ease-out"
-                      style={{ width: `${(loadingProgress.current / loadingProgress.total) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="mt-2 text-sm text-neutral-500">
-                    This may take a few moments...
-                  </p>
+                <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-white to-zinc-400 transition-all duration-300"
+                    style={{ width: `${(loadingProgress.current / loadingProgress.total) * 100}%` }}
+                  />
                 </div>
               )}
             </div>
@@ -264,15 +283,15 @@ export default function HomePage() {
 
         {/* Error State */}
         {error && (
-          <div className="max-w-2xl mx-auto mb-8 bg-red-900/20 border border-red-800/30 rounded-xl p-4 shadow-lg">
-            <p className="text-red-300 text-center">{error}</p>
+          <div className="max-w-2xl mx-auto mb-8 border-2 border-red-800 bg-red-950/40 p-5">
+            <p className="text-red-300 text-center text-base font-mono">{error}</p>
           </div>
         )}
 
         {/* Movie Selection */}
         {!selectedMovie && movies.length > 0 && !loading && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-neutral-200 tracking-tight">
+            <h2 className="text-sm font-mono text-zinc-500 uppercase tracking-widest">
               Now Showing
             </h2>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -281,10 +300,10 @@ export default function HomePage() {
                   key={index}
                   onClick={() => handleMovieSelect(movie)}
                   disabled={loading}
-                  className="group relative aspect-[2/3] rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:z-10 hover:shadow-2xl disabled:cursor-not-allowed"
+                  className="group relative aspect-[2/3] overflow-hidden transition-all duration-300 hover:scale-[1.03] disabled:cursor-not-allowed"
                 >
                   {/* Movie Poster */}
-                  <div className="absolute inset-0 bg-neutral-800">
+                  <div className="absolute inset-0 bg-zinc-900">
                     {movie.imageUrl ? (
                       <img 
                         src={movie.imageUrl} 
@@ -292,44 +311,35 @@ export default function HomePage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-neutral-600 text-4xl font-black">
+                      <div className="w-full h-full flex items-center justify-center text-zinc-700 text-4xl font-light">
                         ?
                       </div>
                     )}
                   </div>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-60 group-hover:opacity-95 transition-opacity" />
                   
-                  {/* Hover Effect Border */}
-                  <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/30 rounded-lg transition-all duration-300"></div>
+                  {/* Border */}
+                  <div className="absolute inset-0 border-2 border-zinc-800 group-hover:border-white/30 transition-colors" />
 
-                  {/* Rating Badge */}
+                  {/* Rating */}
                   {movie.rating && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/70 backdrop-blur-sm border border-white/20 rounded text-white text-[10px] font-semibold">
+                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/90 border-2 border-zinc-700 text-white text-xs font-mono">
                       {movie.rating}
                     </div>
                   )}
 
-                  {/* Title and Info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-                    <h3 className="font-semibold text-white text-xs leading-tight line-clamp-2 group-hover:text-neutral-100 transition-colors duration-300">
+                  {/* Title */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="font-light text-white text-sm leading-tight line-clamp-2 mb-1">
                       {movie.name}
                     </h3>
                     {movie.runtime && (
-                      <p className="text-[10px] text-neutral-400 font-medium">
+                      <p className="text-xs text-zinc-500 transition-opacity font-mono">
                         {movie.runtime}
                       </p>
                     )}
-                  </div>
-
-                  {/* Play Icon Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
-                      <svg className="w-5 h-5 text-neutral-900 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
                   </div>
                 </button>
               ))}
@@ -339,15 +349,15 @@ export default function HomePage() {
 
         {/* Seat Blocks Display */}
         {selectedMovie && seatBlocks.length > 0 && (
-          <div className="space-y-6">
-            {/* Header with Back Button */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-              <div className="text-center md:text-left">
-                <h2 className="text-3xl font-bold text-white mb-1">
+          <div className="space-y-10">
+            {/* Header */}
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-3xl font-light text-white mb-2">
                   {selectedMovie.name}
                 </h2>
-                <p className="text-neutral-400 text-base">
-                  Top 3 seats for {groupSize} {groupSize === 1 ? 'person' : 'people'} per showtime
+                <p className="text-base text-zinc-500 font-mono">
+                  TOP SEATS · PARTY OF {groupSize}
                 </p>
               </div>
               <button
@@ -356,15 +366,14 @@ export default function HomePage() {
                   setSeatBlocks([]);
                   setError(null);
                 }}
-                className="px-5 py-2.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded-lg hover:bg-neutral-700 transition-all duration-200 font-medium"
+                className="px-6 py-3 bg-zinc-800 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 transition-all text-base font-mono"
               >
-                ← Back to Movies
+                ← BACK
               </button>
             </div>
 
-            {/* Group by Showtime */}
+            {/* Showtimes */}
             {(() => {
-              // Group blocks by showtime
               const showtimeGroups = seatBlocks.reduce((groups, block) => {
                 if (!groups[block.showtime]) {
                   groups[block.showtime] = [];
@@ -373,7 +382,6 @@ export default function HomePage() {
                 return groups;
               }, {} as Record<string, SeatBlock[]>);
 
-              // For each showtime, get only the best block per row
               Object.keys(showtimeGroups).forEach(showtime => {
                 const rowGroups = showtimeGroups[showtime].reduce((rows, block) => {
                   if (!rows[block.row] || block.distanceFromCenter < rows[block.row].distanceFromCenter) {
@@ -382,81 +390,79 @@ export default function HomePage() {
                   return rows;
                 }, {} as Record<string, SeatBlock>);
                 
-                // Get top 3 only
                 showtimeGroups[showtime] = Object.values(rowGroups).slice(0, 3);
               });
 
               return Object.entries(showtimeGroups).map(([showtime, blocks]) => (
                 <div key={showtime} className="space-y-4">
                   {/* Showtime Header */}
-                  <div className="flex items-center gap-3 px-2">
-                    <div className="w-10 h-10 rounded-lg bg-neutral-700 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{showtime}</p>
-                      <p className="text-sm text-neutral-400">Top {blocks.length} seat{blocks.length === 1 ? '' : 's'}</p>
-                    </div>
+                  <div className="flex items-baseline gap-4 border-b-2 border-zinc-800 pb-3">
+                    <p className="text-2xl font-light text-white font-mono">{showtime}</p>
+                    <p className="text-sm text-zinc-500 font-mono uppercase tracking-wider">
+                      {blocks.length} Option{blocks.length === 1 ? '' : 's'}
+                    </p>
                   </div>
 
-                  {/* Seat Blocks for this Showtime */}
-                  <div className="grid gap-3 pl-2">
-                    {blocks.map((block, index) => (
-                      <div
-                        key={index}
-                        className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4 hover:bg-neutral-800/70 hover:border-neutral-600/50 hover:shadow-xl transition-all duration-300 group"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <div className="flex items-center gap-6 flex-1">
-                            {/* Rank Badge */}
-                            <div className="flex-shrink-0">
-                              <div className={`
-                                w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg
-                                ${index === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 
-                                  index === 1 ? 'bg-gray-400/20 text-gray-300 border border-gray-400/30' : 
-                                  index === 2 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' : 
-                                  'bg-neutral-700 text-neutral-300 border border-neutral-600'}
-                              `}>
+                  {/* Seat Options */}
+                  <div className="space-y-3">
+                    {blocks.map((block, index) => {
+                      const style = getQualityStyle(index);
+                      return (
+                        <div
+                          key={index}
+                          className={`
+                            border-2 bg-zinc-950 hover:bg-zinc-900 transition-all group
+                            ${style.containerClass}
+                          `}
+                        >
+                          <div className="flex items-center justify-between p-6">
+                            <div className="flex items-center gap-8">
+                              {/* Rank Number */}
+                              <div className="w-12 h-12 flex items-center justify-center border-2 border-zinc-700 text-zinc-400 text-xl font-mono">
                                 {index + 1}
                               </div>
-                            </div>
 
-                            {/* Row */}
-                            <div>
-                              <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold mb-1">Row</p>
-                              <p className="text-xl font-bold text-neutral-200">{block.row}</p>
-                            </div>
-                            
-                            {/* Seats */}
-                            <div>
-                              <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold mb-1">Seats</p>
-                              <div className="flex gap-2">
-                                {block.seats.map((seat, seatIndex) => (
-                                  <span 
-                                    key={seatIndex}
-                                    className="px-2.5 py-1 bg-neutral-700 border border-neutral-600 rounded text-white font-mono text-sm"
-                                  >
-                                    {seat.row}{seat.column}
-                                  </span>
-                                ))}
+                              {/* Row */}
+                              <div>
+                                <p className="text-xs text-zinc-500 font-mono mb-2 uppercase tracking-wider">ROW</p>
+                                <p className="text-2xl font-light text-white">{block.row}</p>
+                              </div>
+                              
+                              {/* Seats */}
+                              <div>
+                                <p className="text-xs text-zinc-500 font-mono mb-2 uppercase tracking-wider">SEATS</p>
+                                <div className="flex gap-2">
+                                  {block.seats.map((seat, seatIndex) => (
+                                    <span 
+                                      key={seatIndex}
+                                      className={`
+                                        px-3 py-2 border-2 font-mono text-sm font-medium
+                                        ${style.seatClass}
+                                      `}
+                                    >
+                                      {seat.row}{seat.column}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Select Button */}
-                          <a 
-                            href={block.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="px-6 py-3 bg-white text-neutral-900 rounded-lg font-semibold hover:bg-neutral-100 hover:shadow-lg transition-all duration-200 whitespace-nowrap"
-                          >
-                            Select Seats →
-                          </a>
+                            {/* Select Button */}
+                            <a 
+                              href={block.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`
+                                px-8 py-4 transition-all text-base font-mono font-bold uppercase tracking-wide
+                                ${style.buttonClass}
+                              `}
+                            >
+                              SELECT →
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ));
