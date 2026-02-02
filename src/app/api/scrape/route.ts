@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
         const showtimesForSeats = await scrapeShowtimes(theaterUrl, movieName);
         console.log(`📅 Found ${showtimesForSeats.length} showtimes to scrape`);
         
+        // ADD THIS DEBUG CHECK
+        if (showtimesForSeats.length === 0) {
+            console.error('⚠️ No showtimes found - cannot scrape seats');
+            return NextResponse.json({ 
+                error: 'No showtimes found for this movie',
+                movieName,
+                theaterUrl 
+            }, { status: 404 });
+        }
+        
         // Create a streaming response
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
