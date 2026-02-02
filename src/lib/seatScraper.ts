@@ -1,3 +1,4 @@
+// lib/seatScraper.ts
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { MovieInfo, Seat, Showtime } from "../types";
@@ -6,15 +7,24 @@ const BASE_URL = "https://www.cinemark.com";
 const REQUEST_DELAY = 5000;
 
 async function fetchHTML(url: string) {
-    const response = await axios.get(url);
-    return cheerio.load(response.data);
+    console.log('🌐 Fetching URL:', url);
+    try {
+        const response = await axios.get(url);
+        console.log('✅ Fetch successful, status:', response.status);
+        return cheerio.load(response.data);
+    } catch (error) {
+        console.error('❌ Fetch failed:', error);
+        throw error;
+    }
 }
 
 export async function scrapeMovieNames(theaterUrl: string): Promise<MovieInfo[]> {
+  console.log('🎬 scrapeMovieNames - Starting...');
   const $ = await fetchHTML(theaterUrl);
   const movieBlocks = $('div[class^="showtimeMovieBlock"]');
+  console.log(`📦 Found ${movieBlocks.length} movie blocks`);
   
-  return movieBlocks.map((_, block) => {
+  const movies = movieBlocks.map((index, block) => {
       const $block = $(block);
       const name = $block.find('h3').text().trim();
       
@@ -48,41 +58,58 @@ export async function scrapeMovieNames(theaterUrl: string): Promise<MovieInfo[]>
           imageUrl = imgTag.attr('srcset') || imgTag.attr('data-srcset') || imgTag.attr('src') || null;
       }
       
+      console.log(`  📽️ Movie ${index + 1}: "${name}" - ${rating} - ${runtime}`);
       return { name, imageUrl, rating, runtime };
   }).get();
+  
+  console.log(`✅ scrapeMovieNames - Returning ${movies.length} movies`);
+  return movies;
 }
 
 export async function scrapeShowtimes(theaterUrl: string, movieName: string): Promise<Showtime[]> {
+    console.log('🕐 scrapeShowtimes - Starting for:', movieName);
     const $ = await fetchHTML(theaterUrl);
     const movieBlocks = $('div[class^="showtimeMovieBlock"]');
+    console.log(`📦 Found ${movieBlocks.length} movie blocks to search`);
 
     for (let i = 0; i < movieBlocks.length; i++) {
       const block = $(movieBlocks[i]);
       const movieTitle = block.find('h3').text().trim();
+      console.log(`  🔍 Checking block ${i + 1}: "${movieTitle}"`);
   
       if (movieTitle === movieName) {
+        console.log(`  ✅ Match found! Extracting showtimes...`);
         const showtimeLinks = block.find('.showtimeMovieTimes .showtime a.showtime-link');
-        return showtimeLinks.map((_, link) => {
+        console.log(`  🎫 Found ${showtimeLinks.length} showtime links`);
+        
+        const showtimes = showtimeLinks.map((_, link) => {
             const $link = $(link);
-            return {
+            const showtime = {
                 'time': $link.text().trim(),
                 'format': $link.attr('data-print-type-name')?.trim() || 'Unknown',
                 'url': BASE_URL + $link.attr('href')?.trim() || 'Unknown'
             };
+            console.log(`    🎬 Showtime: ${showtime.time} (${showtime.format})`);
+            return showtime;
         }).get();
+        
+        console.log(`✅ scrapeShowtimes - Returning ${showtimes.length} showtimes`);
+        return showtimes;
       }
     }
-    console.log(`No showtimes found for movie: ${movieName}`);
+    console.warn(`⚠️ No showtimes found for movie: ${movieName}`);
     return [];
 }
 
 async function scrapeSeatsForShowtime(showtime: Showtime): Promise<Seat[]> {
+    console.log(`💺 scrapeSeatsForShowtime - Starting for ${showtime.time}`);
     try {
         const $ = await fetchHTML(showtime.url);
         const seatsElements = $('button.seatBlock');
+        console.log(`  🪑 Found ${seatsElements.length} seat elements`);
         const seats: Seat[] = [];
     
-        seatsElements.each((_, seat) => {
+        seatsElements.each((index, seat) => {
           const seatDesignation = $(seat).find('span.seatDesignation').text();
           if (seatDesignation) {
             const row = seatDesignation[0];
@@ -92,15 +119,18 @@ async function scrapeSeatsForShowtime(showtime: Showtime): Promise<Seat[]> {
             seats.push({ row, column, time: showtime.time, isAvailable: isAvailable, url: showtime.url });
           }
         });
-    
+        
+        const availableCount = seats.filter(s => s.isAvailable).length;
+        console.log(`  ✅ Processed ${seats.length} seats (${availableCount} available)`);
         return seats;
       } catch (error) {
-        console.error(`Error scraping seats for ${showtime.time}:`, error);
+        console.error(`❌ Error scraping seats for ${showtime.time}:`, error);
         return [];
       }
     }
 
 export async function scrapeSeats(showtimes: Showtime[]): Promise<Seat[]> {
+    console.log(`💺 scrapeSeats - Starting for ${showtimes.length} showtimes`);
     const allSeats: Seat[] = [];
 
     for (const showtime of showtimes) {
@@ -108,9 +138,13 @@ export async function scrapeSeats(showtimes: Showtime[]): Promise<Seat[]> {
         allSeats.push(...seats);
 
         // Rate limiting - wait between requests
-        if (showtimes.indexOf(showtime) < showtimes.length - 1) {
+        const showtimeIndex = showtimes.indexOf(showtime);
+        if (showtimeIndex < showtimes.length - 1) {
+            console.log(`⏳ Waiting ${REQUEST_DELAY}ms before next request...`);
             await new Promise(resolve => setTimeout(resolve, REQUEST_DELAY));
         }
     }
+    
+    console.log(`✅ scrapeSeats - Total seats collected: ${allSeats.length}`);
     return allSeats;
 }

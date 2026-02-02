@@ -1,6 +1,8 @@
+// utils/seatFinder.ts
 import { HeatmapPreference, Seat, SeatBlock } from "../types";
 
 export default function SeatFinder(allSeats: Seat[], groupSize: number, heatmapPreference: HeatmapPreference) : SeatBlock[] {
+  console.log(`🎯 SeatFinder - Starting with ${allSeats.length} seats, group size: ${groupSize}, preference: ${heatmapPreference}`);
   const blocks: SeatBlock[] = [];
 
   // Check if the theater's walk in is on the right or left (changes where the middle is) and set the min and max columns for each time.
@@ -22,6 +24,10 @@ export default function SeatFinder(allSeats: Seat[], groupSize: number, heatmapP
   for (const time in theaterLayouts) {
     theaterLayouts[time].rows.sort(); 
   }
+  
+  console.log('📐 Theater layouts:', Object.keys(theaterLayouts).map(time => 
+    `${time}: ${theaterLayouts[time].rows.length} rows, cols ${theaterLayouts[time].minCol}-${theaterLayouts[time].maxCol}`
+  ).join(', '));
 
   // Group available seats by time and row.
   const availableGroups: Record<string, { columns: number[]; url: string }> = {};
@@ -34,9 +40,10 @@ export default function SeatFinder(allSeats: Seat[], groupSize: number, heatmapP
     }
     availableGroups[key].columns.push(seat.column);
   });
+  
+  console.log(`📊 Available groups: ${Object.keys(availableGroups).length} time-row combinations`);
 
   // "groups" is a record of time-row pairs as the key, and the value is an array of columns that are available for that time and row.
-  // Example: { "10:00-A": [1, 2, 3, 4, 5], "10:00-B": [1, 2, 3, 4, 5] }
   for (const key in availableGroups) {
     const [time, row] = key.split('-');
     const columns = availableGroups[key].columns.sort((a, b) => a - b);
@@ -48,12 +55,19 @@ export default function SeatFinder(allSeats: Seat[], groupSize: number, heatmapP
     const rowIndex = layout.rows.indexOf(row);
     
     // Skip front rows for all preferences EXCEPT 'front'
-    if (heatmapPreference !== 'front' && rowIndex < rowsToOmit) continue;
+    if (heatmapPreference !== 'front' && rowIndex < rowsToOmit) {
+      console.log(`  ⏭️ Skipping ${time}-${row}: front row (index ${rowIndex} < ${rowsToOmit})`);
+      continue;
+    }
     
-    if (columns.length < groupSize) continue;
+    if (columns.length < groupSize) {
+      console.log(`  ⏭️ Skipping ${time}-${row}: not enough seats (${columns.length} < ${groupSize})`);
+      continue;
+    }
     
     const theaterMiddle = (layout.minCol + layout.maxCol) / 2;
 
+    let blocksFoundInRow = 0;
     for (let i = 0; i < columns.length - groupSize + 1; i++) {
       const startColumn = columns[i];
       let isContiguous = true;
@@ -87,11 +101,24 @@ export default function SeatFinder(allSeats: Seat[], groupSize: number, heatmapP
           seats: columns.slice(i, i + groupSize).map(column => ({ column, row, time, isAvailable: true, url: url })),
           url: url
         });
+        blocksFoundInRow++;
       }
+    }
+    
+    if (blocksFoundInRow > 0) {
+      console.log(`  ✅ ${time}-${row}: Found ${blocksFoundInRow} contiguous blocks`);
     }
   }
   
   blocks.sort((a, b) => a.distanceFromCenter - b.distanceFromCenter);
+  console.log(`✅ SeatFinder - Found ${blocks.length} total blocks, sorted by preference`);
+  
+  if (blocks.length > 0) {
+    console.log(`🥇 Top 3 blocks:`, blocks.slice(0, 3).map(b => 
+      `${b.showtime} Row ${b.row} (score: ${b.distanceFromCenter.toFixed(2)})`
+    ));
+  }
+  
   return blocks;
 }
 
@@ -115,39 +142,38 @@ function calculateHeatmapScore(
   const middleRowIndex = Math.floor((totalRows - 1) / 2);
   const distanceFromMiddleRow = Math.abs(rowIndex - middleRowIndex);
 
+  let score: number;
   switch (preference) {
     case 'middles':
-      // Just horizontal middle distance (existing behavior)
-      return distanceFromMiddle;
+      score = distanceFromMiddle;
+      break;
     
     case 'crosshair':
-      // Prefer middle rows AND middle columns
-      // Combine row and column distance with equal weight
-      return distanceFromMiddleRow + distanceFromMiddle;
+      score = distanceFromMiddleRow + distanceFromMiddle;
+      break;
     
     case 'back-triangle':
-      // Triangle from back corners to middle center
-      // Back rows get lower scores, and within each row, middle is best
-      // As you go forward, the acceptable range narrows
-      const backBonus = distanceFromBack * 5; // Heavy penalty for front rows
-      const columnPenalty = distanceFromMiddle * (1 + normalizedRowPosition); // Tighter tolerance in middle rows
-      return backBonus + columnPenalty;
+      const backBonus = distanceFromBack * 5;
+      const columnPenalty = distanceFromMiddle * (1 + normalizedRowPosition);
+      score = backBonus + columnPenalty;
+      break;
     
     case 'back':
-      // Prefer back rows, then use middle distance as tiebreaker
-      return distanceFromBack * 100 + distanceFromMiddle;
+      score = distanceFromBack * 100 + distanceFromMiddle;
+      break;
     
     case 'front':
-      // Prefer front rows (reverse of back), then use middle distance as tiebreaker
-      const distanceFromFront = rowIndex; // 0-indexed from actual front
-      return distanceFromFront * 100 + distanceFromMiddle;
+      const distanceFromFront = rowIndex;
+      score = distanceFromFront * 100 + distanceFromMiddle;
+      break;
     
     case 'back-back':
-      // Strongly prefer back rows in order, column doesn't matter as much
-      // Back row = 0, second to back = 1, etc.
-      return distanceFromBack * 1000 + distanceFromMiddle * 0.1;
+      score = distanceFromBack * 1000 + distanceFromMiddle * 0.1;
+      break;
     
     default:
-      return distanceFromMiddle;
+      score = distanceFromMiddle;
   }
+  
+  return score;
 }
