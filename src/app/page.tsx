@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { SeatBlock, MovieInfo, HeatmapPreference } from '../types';
+import { useState } from 'react';
+import type { SeatBlock, MovieInfo, Showtime, Seat, HeatmapPreference } from '../types';
 import TheaterHeatmaps from '../components/TheaterHeatmaps';
 import TheaterSelector from '../components/TheaterSelector';
+import { useExtensionScraper } from '../hooks/useExtensionScraper';
+import * as cheerio from 'cheerio';
+import SeatFinder from '../utils/seatFinder';
+
+// Update with your actual Chrome Web Store URL when published
+const EXTENSION_INSTALL_URL = 'https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID';
 
 export default function HomePage() {
+  const { scraper, isInstalled, isChecking } = useExtensionScraper();
+  
   const [selectedTheater, setSelectedTheater] = useState<{ url: string; name: string } | null>(null);
   const [movies, setMovies] = useState<MovieInfo[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<MovieInfo | null>(null);
@@ -17,39 +25,66 @@ export default function HomePage() {
   const [heatmapPreference, setHeatmapPreference] = useState<HeatmapPreference>('middles');
 
   // Load movies when theater is selected
-  useEffect(() => {
-    if (!selectedTheater) return;
-
-    const loadMovies = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const loadMovies = async (theaterUrl: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('📽️ Loading movies...');
+      const html = await scraper.fetchHTML(theaterUrl);
+      const $ = cheerio.load(html);
+      
+      const movieBlocks = $('div[class^="showtimeMovieBlock"]');
+      console.log(`Found ${movieBlocks.length} movie blocks`);
+      
+      const movieList: MovieInfo[] = [];
+      
+      movieBlocks.each((_, block) => {
+        const $block = $(block);
+        const name = $block.find('h3').text().trim();
         
-        const response = await fetch('/api/scrape', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: 'movies', 
-            theaterUrl: selectedTheater.url 
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to load movies');
+        const rating = $block.find('.showtimeMovieRating').text().trim() || null;
+        const runtime = $block.find('.showtimeMovieRuntime').text().trim() || null;
+        
+        let imageUrl: string | null = null;
+        
+        const trailerButton = $block.find('a.showtimeMovieTrailerLink');
+        if (trailerButton.length) {
+          const jsonData = trailerButton.attr('data-json-model');
+          if (jsonData) {
+            try {
+              const movieData = JSON.parse(jsonData.replace(/&quot;/g, '"'));
+              imageUrl = movieData.posterMediumImageUrl || movieData.posterLargeImageUrl || movieData.posterSmallImageUrl || null;
+            } catch (e) {
+              console.error('Failed to parse JSON data:', e);
+            }
+          }
         }
-
-        const { movies } = await response.json();
-        setMovies(movies);
-      } catch (err) {
-        setError('Failed to load movies');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadMovies();
-  }, [selectedTheater]);
+        
+        if (!imageUrl) {
+          const sourceTag = $block.find('picture source');
+          if (sourceTag.length) {
+            imageUrl = sourceTag.attr('srcset') || null;
+          }
+        }
+        
+        if (!imageUrl) {
+          const imgTag = $block.find('img');
+          imageUrl = imgTag.attr('srcset') || imgTag.attr('data-srcset') || imgTag.attr('src') || null;
+        }
+        
+        movieList.push({ name, imageUrl, rating, runtime });
+      });
+      
+      setMovies(movieList);
+      console.log(`✅ Loaded ${movieList.length} movies`);
+    } catch (err) {
+      setError('Failed to load movies');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle theater selection
   const handleTheaterSelect = (theaterUrl: string, theaterName: string) => {
@@ -58,6 +93,9 @@ export default function HomePage() {
     setSelectedMovie(null);
     setSeatBlocks([]);
     setError(null);
+    
+    // Load movies immediately
+    loadMovies(theaterUrl);
   };
 
   // Handle back to theater selection
@@ -71,82 +109,104 @@ export default function HomePage() {
 
   // Handle movie selection and seat scraping
   const handleMovieSelect = async (movie: MovieInfo) => {
+    if (!isInstalled) {
+      setError('Please install the browser extension first');
+      return;
+    }
+
     setSelectedMovie(movie);
     setSeatBlocks([]);
     setError(null);
+    setLoading(true);
     setLoadingProgress(null);
     
     try {
-      setLoading(true);
+      console.log('🕐 Fetching showtimes for:', movie.name);
       
-      // First, get the showtimes to know how many there are
-      const showtimesResponse = await fetch('/api/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'showtimes',
-          theaterUrl: selectedTheater!.url,
-          movieName: movie.name
-        })
+      // Fetch theater page to get showtimes
+      const theaterHtml = await scraper.fetchHTML(selectedTheater!.url);
+      const $ = cheerio.load(theaterHtml);
+      
+      // Parse showtimes
+      const showtimes: Showtime[] = [];
+      const movieBlocks = $('div[class^="showtimeMovieBlock"]');
+      
+      movieBlocks.each((_, block) => {
+        const movieTitle = $(block).find('h3').text().trim();
+        if (movieTitle === movie.name) {
+          const showtimeLinks = $(block).find('.showtimeMovieTimes .showtime a.showtime-link');
+          showtimeLinks.each((_, link) => {
+            const $link = $(link);
+            showtimes.push({
+              time: $link.text().trim(),
+              format: $link.attr('data-print-type-name')?.trim() || 'Unknown',
+              url: 'https://www.cinemark.com' + $link.attr('href')?.trim()
+            });
+          });
+        }
       });
-
-      if (!showtimesResponse.ok) {
-        throw new Error('Failed to get showtimes');
-      }
-
-      const { showtimes } = await showtimesResponse.json();
       
-      // Set initial progress
+      console.log(`✅ Found ${showtimes.length} showtimes`);
+      
+      if (showtimes.length === 0) {
+        setError('No showtimes found for this movie');
+        setLoading(false);
+        return;
+      }
+      
       setLoadingProgress({ current: 0, total: showtimes.length });
-
-      // Now scrape seats with progress updates
-      const response = await fetch('/api/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'seats',
-          theaterUrl: selectedTheater!.url,
-          movieName: movie.name,
-          groupSize,
-          heatmapPreference
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to scrape seats');
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === 'progress') {
-                setLoadingProgress({ current: data.current, total: data.total });
-              } else if (data.type === 'complete') {
-                setSeatBlocks(data.blocks);
-                if (data.blocks.length === 0) {
-                  setError(`No blocks of ${groupSize} contiguous seats found`);
-                }
-              }
-            }
+      
+      // Fetch seats for each showtime
+      const allSeats: Seat[] = [];
+      
+      for (let i = 0; i < showtimes.length; i++) {
+        const showtime = showtimes[i];
+        console.log(`💺 Fetching seats for ${showtime.time} (${i + 1}/${showtimes.length})`);
+        
+        setLoadingProgress({ current: i + 1, total: showtimes.length });
+        
+        const seatHtml = await scraper.fetchHTML(showtime.url);
+        const $seats = cheerio.load(seatHtml);
+        
+        const seatsElements = $seats('button.seatBlock');
+        console.log(`  Found ${seatsElements.length} seat elements`);
+        
+        seatsElements.each((_, seat) => {
+          const seatDesignation = $seats(seat).find('span.seatDesignation').text();
+          if (seatDesignation) {
+            const row = seatDesignation[0];
+            const column = parseInt(seatDesignation.substring(1), 10);
+            const isAvailable = $seats(seat).hasClass('seatAvailable');
+            
+            allSeats.push({
+              row,
+              column,
+              time: showtime.time,
+              isAvailable,
+              url: showtime.url
+            });
           }
+        });
+        
+        // Delay between requests to be respectful
+        if (i < showtimes.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
-    } catch (err) {
-      setError('Failed to scrape seats');
-      console.error(err);
+      
+      console.log(`✅ Total seats found: ${allSeats.length}`);
+      
+      // Calculate best seat blocks
+      const blocks = SeatFinder(allSeats, groupSize, heatmapPreference);
+      setSeatBlocks(blocks);
+      
+      if (blocks.length === 0) {
+        setError(`No blocks of ${groupSize} contiguous seats found`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Scraping failed:', error);
+      setError(error instanceof Error ? error.message : 'Failed to scrape seats');
     } finally {
       setLoading(false);
       setLoadingProgress(null);
@@ -184,6 +244,84 @@ export default function HomePage() {
       buttonClass: 'bg-white hover:bg-zinc-200 text-black'
     };
   };
+
+  // Show loading while checking for extension
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>
+          <p className="text-zinc-500 font-mono">CHECKING FOR EXTENSION</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show extension installation prompt
+  if (!isInstalled) {
+    return (
+      <div className="min-h-screen bg-black">
+        <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+        
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+          <div className="max-w-2xl w-full border-2 border-zinc-800 bg-zinc-950 p-10">
+            <div className="w-16 h-16 border-2 border-zinc-700 flex items-center justify-center mb-8 text-3xl">
+              🧩
+            </div>
+            
+            <h1 className="text-4xl font-light text-white mb-4 tracking-tight">
+              Extension Required
+            </h1>
+            
+            <p className="text-zinc-400 mb-8 text-lg leading-relaxed">
+              To use Cinemark Seat Finder, you need to install our browser extension. 
+              This allows the app to use your browser session to access Cinemark seat data.
+            </p>
+            
+            <div className="bg-zinc-900 border-2 border-zinc-800 p-6 mb-8">
+              <h3 className="text-white font-mono mb-4 text-sm uppercase tracking-wider">Why is this needed?</h3>
+              <ul className="text-zinc-400 space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>Uses your browser's cookies and session</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>Bypasses Cloudflare protection</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>All scraping happens in your browser</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>Your data stays completely private</span>
+                </li>
+              </ul>
+            </div>
+
+            
+            <a 
+              href="https://chromewebstore.google.com/detail/cinemark-seat-finder/ggcnlllojphccplpckokceenceaelhff"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-8 py-4 bg-white text-black hover:bg-zinc-200 transition-colors text-base font-mono font-bold mb-4"
+            >
+              INSTALL EXTENSION →
+            </a>
+            
+            <p className="text-zinc-600 text-sm font-mono">
+              After installing, refresh this page
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If no theater selected, show theater selector
   if (!selectedTheater) {
@@ -470,6 +608,12 @@ export default function HomePage() {
           </div>
         )}
       </div>
+    <footer className="py-6 text-center text-zinc-600 text-xs font-mono">
+      <p>© {new Date().getFullYear()} Thatcher McClure</p>
+      <a href="/privacy" className="hover:text-white transition-colors underline mt-2 inline-block">
+        Privacy Policy
+      </a>
+    </footer>
     </div>
   );
 }

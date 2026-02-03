@@ -23,6 +23,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/axios": "^0.14.4",
     "@types/cheerio": "^1.0.0",
+    "@types/chrome": "^0.1.36",
     "@types/mssql": "^9.1.9",
     "@types/node": "^20",
     "@types/react": "^19",

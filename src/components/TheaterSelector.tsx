@@ -286,6 +286,12 @@ export default function TheaterSelector({ onTheaterSelect }: TheaterSelectorProp
             </div>
           )}
         </div>
+        <footer className="py-6 text-center text-zinc-600 text-xs font-mono">
+          <p>© {new Date().getFullYear()} Thatcher McClure</p>
+          <a href="/privacy" className="hover:text-white transition-colors underline mt-2 inline-block">
+            Privacy Policy
+          </a>
+        </footer>
       </div>
     </div>
   );
