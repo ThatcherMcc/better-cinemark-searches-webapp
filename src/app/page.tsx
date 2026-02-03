@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import type { SeatBlock, MovieInfo, Showtime, Seat, HeatmapPreference } from '../types';
 import TheaterHeatmaps from '../components/TheaterHeatmaps';
 import TheaterSelector from '../components/TheaterSelector';
 import { useExtensionScraper } from '../hooks/useExtensionScraper';
-import * as cheerio from 'cheerio';
+import type { SeatBlock, MovieInfo, HeatmapPreference } from '../types';
+import { fetchMovies, fetchShowtimes, fetchAllSeats } from '../lib/cinemarkScraper';
+import { groupAndFilterSeatBlocks } from '../utils/groupSeatBlocks';
 import SeatFinder from '../utils/seatFinder';
 
-// Update with your actual Chrome Web Store URL when published
-const EXTENSION_INSTALL_URL = 'https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID';
 
 export default function HomePage() {
   const { scraper, isInstalled, isChecking } = useExtensionScraper();
@@ -29,55 +28,8 @@ export default function HomePage() {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('📽️ Loading movies...');
-      const html = await scraper.fetchHTML(theaterUrl);
-      const $ = cheerio.load(html);
-      
-      const movieBlocks = $('div[class^="showtimeMovieBlock"]');
-      console.log(`Found ${movieBlocks.length} movie blocks`);
-      
-      const movieList: MovieInfo[] = [];
-      
-      movieBlocks.each((_, block) => {
-        const $block = $(block);
-        const name = $block.find('h3').text().trim();
-        
-        const rating = $block.find('.showtimeMovieRating').text().trim() || null;
-        const runtime = $block.find('.showtimeMovieRuntime').text().trim() || null;
-        
-        let imageUrl: string | null = null;
-        
-        const trailerButton = $block.find('a.showtimeMovieTrailerLink');
-        if (trailerButton.length) {
-          const jsonData = trailerButton.attr('data-json-model');
-          if (jsonData) {
-            try {
-              const movieData = JSON.parse(jsonData.replace(/&quot;/g, '"'));
-              imageUrl = movieData.posterMediumImageUrl || movieData.posterLargeImageUrl || movieData.posterSmallImageUrl || null;
-            } catch (e) {
-              console.error('Failed to parse JSON data:', e);
-            }
-          }
-        }
-        
-        if (!imageUrl) {
-          const sourceTag = $block.find('picture source');
-          if (sourceTag.length) {
-            imageUrl = sourceTag.attr('srcset') || null;
-          }
-        }
-        
-        if (!imageUrl) {
-          const imgTag = $block.find('img');
-          imageUrl = imgTag.attr('srcset') || imgTag.attr('data-srcset') || imgTag.attr('src') || null;
-        }
-        
-        movieList.push({ name, imageUrl, rating, runtime });
-      });
-      
+      const movieList = await fetchMovies(scraper, theaterUrl);
       setMovies(movieList);
-      console.log(`✅ Loaded ${movieList.length} movies`);
     } catch (err) {
       setError('Failed to load movies');
       console.error(err);
@@ -113,97 +65,33 @@ export default function HomePage() {
       setError('Please install the browser extension first');
       return;
     }
-
+  
     setSelectedMovie(movie);
     setSeatBlocks([]);
     setError(null);
     setLoading(true);
     setLoadingProgress(null);
-    
+  
     try {
-      console.log('🕐 Fetching showtimes for:', movie.name);
-      
-      // Fetch theater page to get showtimes
-      const theaterHtml = await scraper.fetchHTML(selectedTheater!.url);
-      const $ = cheerio.load(theaterHtml);
-      
-      // Parse showtimes
-      const showtimes: Showtime[] = [];
-      const movieBlocks = $('div[class^="showtimeMovieBlock"]');
-      
-      movieBlocks.each((_, block) => {
-        const movieTitle = $(block).find('h3').text().trim();
-        if (movieTitle === movie.name) {
-          const showtimeLinks = $(block).find('.showtimeMovieTimes .showtime a.showtime-link');
-          showtimeLinks.each((_, link) => {
-            const $link = $(link);
-            showtimes.push({
-              time: $link.text().trim(),
-              format: $link.attr('data-print-type-name')?.trim() || 'Unknown',
-              url: 'https://www.cinemark.com' + $link.attr('href')?.trim()
-            });
-          });
-        }
-      });
-      
-      console.log(`✅ Found ${showtimes.length} showtimes`);
-      
+      const showtimes = await fetchShowtimes(scraper, selectedTheater!.url, movie.name);
+  
       if (showtimes.length === 0) {
         setError('No showtimes found for this movie');
-        setLoading(false);
         return;
       }
-      
+  
       setLoadingProgress({ current: 0, total: showtimes.length });
-      
-      // Fetch seats for each showtime
-      const allSeats: Seat[] = [];
-      
-      for (let i = 0; i < showtimes.length; i++) {
-        const showtime = showtimes[i];
-        console.log(`💺 Fetching seats for ${showtime.time} (${i + 1}/${showtimes.length})`);
-        
-        setLoadingProgress({ current: i + 1, total: showtimes.length });
-        
-        const seatHtml = await scraper.fetchHTML(showtime.url);
-        const $seats = cheerio.load(seatHtml);
-        
-        const seatsElements = $seats('button.seatBlock');
-        console.log(`  Found ${seatsElements.length} seat elements`);
-        
-        seatsElements.each((_, seat) => {
-          const seatDesignation = $seats(seat).find('span.seatDesignation').text();
-          if (seatDesignation) {
-            const row = seatDesignation[0];
-            const column = parseInt(seatDesignation.substring(1), 10);
-            const isAvailable = $seats(seat).hasClass('seatAvailable');
-            
-            allSeats.push({
-              row,
-              column,
-              time: showtime.time,
-              isAvailable,
-              url: showtime.url
-            });
-          }
-        });
-        
-        // Delay between requests to be respectful
-        if (i < showtimes.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-      }
-      
-      console.log(`✅ Total seats found: ${allSeats.length}`);
-      
-      // Calculate best seat blocks
+  
+      const allSeats = await fetchAllSeats(scraper, showtimes, (current, total) => {
+        setLoadingProgress({ current, total });
+      });
+  
       const blocks = SeatFinder(allSeats, groupSize, heatmapPreference);
       setSeatBlocks(blocks);
-      
+  
       if (blocks.length === 0) {
         setError(`No blocks of ${groupSize} contiguous seats found`);
       }
-      
     } catch (error) {
       console.error('❌ Scraping failed:', error);
       setError(error instanceof Error ? error.message : 'Failed to scrape seats');
@@ -519,24 +407,7 @@ export default function HomePage() {
 
             {/* Showtimes */}
             {(() => {
-              const showtimeGroups = seatBlocks.reduce((groups, block) => {
-                if (!groups[block.showtime]) {
-                  groups[block.showtime] = [];
-                }
-                groups[block.showtime].push(block);
-                return groups;
-              }, {} as Record<string, SeatBlock[]>);
-
-              Object.keys(showtimeGroups).forEach(showtime => {
-                const rowGroups = showtimeGroups[showtime].reduce((rows, block) => {
-                  if (!rows[block.row] || block.distanceFromCenter < rows[block.row].distanceFromCenter) {
-                    rows[block.row] = block;
-                  }
-                  return rows;
-                }, {} as Record<string, SeatBlock>);
-                
-                showtimeGroups[showtime] = Object.values(rowGroups).slice(0, 3);
-              });
+              const showtimeGroups = groupAndFilterSeatBlocks(seatBlocks);
 
               return Object.entries(showtimeGroups).map(([showtime, blocks]) => (
                 <div key={showtime} className="space-y-4">
@@ -544,7 +415,7 @@ export default function HomePage() {
                   <div className="flex items-baseline gap-4 border-b-2 border-zinc-800 pb-3">
                     <p className="text-2xl font-light text-white font-mono">{showtime}</p>
                     <p className="text-sm text-zinc-500 font-mono uppercase tracking-wider">
-                      {blocks.length} Option{blocks.length === 1 ? '' : 's'}
+                      Top {blocks.length} Option{blocks.length === 1 ? '' : 's'}
                     </p>
                   </div>
 
