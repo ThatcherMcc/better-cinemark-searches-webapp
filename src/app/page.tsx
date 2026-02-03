@@ -267,39 +267,40 @@ export default function HomePage() {
       <div className="min-h-screen bg-black">
         <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         
-        <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
           <div className="max-w-2xl w-full border-2 border-zinc-800 bg-zinc-950 p-10">
             <div className="w-16 h-16 border-2 border-zinc-700 flex items-center justify-center mb-8 text-3xl">
               🧩
             </div>
             
             <h1 className="text-4xl font-light text-white mb-4 tracking-tight">
-              Extension Required
+              One Quick Step
             </h1>
-            
+
             <p className="text-zinc-400 mb-8 text-lg leading-relaxed">
-              To use Cinemark Seat Finder, you need to install our browser extension. 
-              This allows the app to use your browser session to access Cinemark seat data.
+              Cinemark doesn't let other apps pull up seat info directly. 
+              A small browser extension lets Seat Finder check availability 
+              the same way you would — just browsing their site normally.
             </p>
-            
+
             <div className="bg-zinc-900 border-2 border-zinc-800 p-6 mb-8">
-              <h3 className="text-white font-mono mb-4 text-sm uppercase tracking-wider">Why is this needed?</h3>
+              <h3 className="text-white font-mono mb-4 text-sm uppercase tracking-wider">What to expect</h3>
               <ul className="text-zinc-400 space-y-3">
                 <li className="flex items-start gap-3">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Uses your browser's cookies and session</span>
+                  <span>Install in one click from the Chrome Web Store</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Bypasses Cloudflare protection</span>
+                  <span>Only works on this app — can't access anything else</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>All scraping happens in your browser</span>
+                  <span>Nothing is stored or saved</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Your data stays completely private</span>
+                  <span>Uninstall anytime from your Chrome extensions page</span>
                 </li>
               </ul>
             </div>
@@ -318,6 +319,12 @@ export default function HomePage() {
               After installing, refresh this page
             </p>
           </div>
+          <footer className="py-6 text-center text-zinc-600 text-xs font-mono">
+            <p>© {new Date().getFullYear()} Thatcher McClure</p>
+            <a href="/privacy" className="hover:text-white transition-colors underline mt-2 inline-block">
+              Privacy Policy
+            </a>
+          </footer>
         </div>
       </div>
     );
