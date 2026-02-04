@@ -1,20 +1,29 @@
-Seat Finder 🎥
-Seat Finder is a specialized tool designed to optimize the movie-going experience by identifying the best available seats in real-time. It uses a custom heatmap algorithm to rank seating quality and identifies contiguous blocks for groups.
+# Seat Finder 🎥
 
-Live Demo: seat-finder-webapp.vercel.app
+**Seat Finder** is a specialized tool designed to optimize the movie-going experience by identifying the best available seats in real-time. It uses a custom heatmap algorithm to rank seating quality and identify contiguous blocks for groups.
 
-(Requires the companion Chrome Extension for seat scraping)
+**Live Demo:** [better-cinemark-searches-webapp.vercel.app](https://seat-finder-webapp.vercel.app)  
+*(Requires the companion Chrome Extension for seat scraping)*
 
-✨ Key Features
-Contiguous Block Finder: Instantly find seats together for any group size.
+---
 
-Heatmap Logic: Visualizes the "prime" viewing areas within any theater layout.
+## ✨ Key Features
+* **Contiguous Block Finder:** Instantly find seats together for any group size.
+* **Heatmap Logic:** Visualizes the "prime" viewing areas within any theater layout.
+* **Extension-Powered:** Uses a Chrome Extension to bypass scraping blocks and handle credentials securely.
+* **Performance:** Built with **Next.js** and **TypeScript**, utilizing **NeonDB** for smart data caching.
 
-Next.js + TypeScript: Built for speed and type safety.
+## 🛠 Tech Stack
+* **Framework:** Next.js (App Router)
+* **Language:** TypeScript
+* **Database:** NeonDB (PostgreSQL)
+* **Styling:** Tailwind CSS
+* **Deployment:** Vercel
 
-Smart Caching: Reduces server load by caching movie lists via NeonDB.
+## 📝 Technical Note
+This repository is primarily for **portfolio demonstration**. Because the application relies on private environment variables and a specific database schema (NeonDB), it is not intended to be run locally without prior configuration of the backend services.
 
-🛠 Technical Overview
-This project consists of a Next.js web application and a Chrome Extension. The extension handles the authenticated data retrieval to bypass traditional scraping hurdles, while the web app processes the seating grid and renders the heatmap.
+---
 
-Note: This repository is for portfolio demonstration. Local setup requires specific environment variables and database configurations that are not public.
+## 🛡 Disclaimer
+This project is for educational purposes only. It is not affiliated with, endorsed by, or supported by Cinemark or any other theater chain. Use responsibly.
