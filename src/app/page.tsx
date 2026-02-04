@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TheaterHeatmaps from '../components/TheaterHeatmaps';
 import TheaterSelector from '../components/TheaterSelector';
 import { useExtensionScraper } from '../hooks/useExtensionScraper';
@@ -15,6 +15,7 @@ export default function HomePage() {
   
   const [selectedTheater, setSelectedTheater] = useState<{ url: string; name: string } | null>(null);
   const [movies, setMovies] = useState<MovieInfo[]>([]);
+  const [movieCache, setMovieCache] = useState<Map<string, { movies: MovieInfo[], cachedAt: number }>>(new Map());
   const [selectedMovie, setSelectedMovie] = useState<MovieInfo | null>(null);
   const [groupSize, setGroupSize] = useState<number>(2);
   const [seatBlocks, setSeatBlocks] = useState<SeatBlock[]>([]);
@@ -23,13 +24,49 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [heatmapPreference, setHeatmapPreference] = useState<HeatmapPreference>('middles');
 
+  const isCacheStale = (cachedAt: number): boolean => {
+    const now = new Date();
+    const cacheDate = new Date(cachedAt);
+    
+    // Get today's 2am cutoff time (middle of the 1-3am window)
+    const todayCutoff = new Date(now);
+    todayCutoff.setHours(2, 0, 0, 0);
+    
+    // If it's currently before 2am, use yesterday's 2am as the cutoff
+    if (now.getHours() < 2) {
+      todayCutoff.setDate(todayCutoff.getDate() - 1);
+    }
+    
+    // Cache is stale if it was created before the last 2am cutoff
+    return cacheDate < todayCutoff;
+  };
+
   // Load movies when theater is selected
   const loadMovies = async (theaterUrl: string) => {
+    // Check cache first
+    const cached = movieCache.get(theaterUrl);
+    if (cached && !isCacheStale(cached.cachedAt)) {
+      console.log('📦 Loading movies from cache');
+      setMovies(cached.movies);
+      return;
+    }
+
+    if (cached && isCacheStale(cached.cachedAt)) {
+      console.log('🗑️ Cache expired (before last 2am), refreshing...');
+    }
+
     try {
       setLoading(true);
       setError(null);
+      console.log('🔍 Fetching movies from server');
       const movieList = await fetchMovies(scraper, theaterUrl);
       setMovies(movieList);
+      
+      // Cache the results with current timestamp
+      setMovieCache(prev => new Map(prev).set(theaterUrl, {
+        movies: movieList,
+        cachedAt: Date.now()
+      }));
     } catch (err) {
       setError('Failed to load movies');
       console.error(err);
@@ -54,6 +91,13 @@ export default function HomePage() {
   const handleBackToTheaterSelection = () => {
     setSelectedTheater(null);
     setMovies([]);
+    setSelectedMovie(null);
+    setSeatBlocks([]);
+    setError(null);
+  };
+
+  // Handle back to movie selection
+  const handleBackToMovieSelection = () => {
     setSelectedMovie(null);
     setSeatBlocks([]);
     setError(null);
@@ -394,14 +438,10 @@ export default function HomePage() {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setSelectedMovie(null);
-                  setSeatBlocks([]);
-                  setError(null);
-                }}
+                onClick={handleBackToMovieSelection}
                 className="px-6 py-3 bg-zinc-800 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 transition-all text-base font-mono"
               >
-                ← BACK
+                ← BACK TO MOVIES
               </button>
             </div>
 
