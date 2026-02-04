@@ -2,7 +2,7 @@
 
 **Seat Finder** is a specialized tool designed to optimize the movie-going experience by identifying the best available seats in real-time. It uses a custom heatmap algorithm to rank seating quality and identify contiguous blocks for groups.
 
-**Live Demo:** [better-cinemark-searches-webapp.vercel.app](https://seat-finder-webapp.vercel.app)  
+**Live Demo:** [seat-finder-webapp.vercel.app](https://seat-finder-webapp.vercel.app)  
 *(Requires the companion Chrome Extension for seat scraping)*
 
 ---
@@ -27,3 +27,4 @@ This repository is primarily for **portfolio demonstration**. Because the applic
 
 ## 🛡 Disclaimer
 This project is for educational purposes only. It is not affiliated with, endorsed by, or supported by Cinemark or any other theater chain. Use responsibly.
+
