@@ -1,4 +1,4 @@
-const EXTENSION_ID = 'ggcnlllojphccplpckokceenceaelhff'; // You'll get this after publishing
+const EXTENSION_ID = 'ajlipjjaficplabjacapmoaecngpckjb'; // You'll get this after publishing
 
 export class ExtensionScraper {
   private isInstalled = false;

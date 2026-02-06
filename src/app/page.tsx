@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import TheaterHeatmaps from '../components/TheaterHeatmaps';
 import TheaterSelector from '../components/TheaterSelector';
 import { useExtensionScraper } from '../hooks/useExtensionScraper';
@@ -239,7 +239,7 @@ export default function HomePage() {
 
             
             <a 
-              href="https://chromewebstore.google.com/detail/cinemark-seat-finder/ggcnlllojphccplpckokceenceaelhff"
+              href="https://chromewebstore.google.com/detail/cinemark-seat-finder/ajlipjjaficplabjacapmoaecngpckjb"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block px-8 py-4 bg-white text-black hover:bg-zinc-200 transition-colors text-base font-mono font-bold mb-4"
